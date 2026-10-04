@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+state/
+dist/
+*.log
+*.tar
+*.tar.gz
+*.pem
+*.key
+.desktop-commander-device/
+.claude-server-commander/
+__pycache__/

@@ -1,0 +1,69 @@
+name: Publish Docker image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact tagged release matching VERSION (public image)
+        required: true
+        default: "0.1.0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-rdc-host-admin
+  cancel-in-progress: false
+
+jobs:
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate release and credentials
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$REQUESTED_VERSION" == "$(cat VERSION)" ]]
+          [[ "$(git rev-parse "v$REQUESTED_VERSION^{commit}")" == "$(git rev-parse HEAD)" ]]
+          [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_TOKEN" ]] || {
+            echo 'Configure DOCKERHUB_USERNAME and a persistent write-scoped DOCKERHUB_TOKEN; do not copy a browser-login session token.' >&2
+            exit 1
+          }
+          echo "version=$REQUESTED_VERSION" >> "$GITHUB_OUTPUT"
+          echo "minor=${REQUESTED_VERSION%.*}" >> "$GITHUB_OUTPUT"
+      - name: Unit tests
+        run: |
+          python3 -m unittest discover -s tests -v
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and publish public image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            VCS_REF=${{ github.sha }}
+          tags: |
+            egori4/rdc-host-admin:${{ steps.version.outputs.version }}
+            egori4/rdc-host-admin:${{ steps.version.outputs.minor }}
+            egori4/rdc-host-admin:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/egori4/rdc-host-admin
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}

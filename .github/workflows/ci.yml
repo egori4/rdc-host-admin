@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Shell syntax
+        run: |
+          find . -path './node_modules' -prune -o -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+      - name: Unit tests
+        run: |
+          python3 -m unittest discover -s tests -v
+      - name: Build self-contained image
+        run: docker build -t rdc-host-admin:ci .
+      - name: Runtime acknowledgement fails closed
+        run: |
+          set +e
+          docker run --rm --network none rdc-host-admin:ci true
+          result=$?
+          set -e
+          test "$result" = 64

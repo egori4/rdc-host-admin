@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Execute an argv vector in the host namespaces/root. No eval or joining of arguments.
+set -euo pipefail
+if [[ "${RDC_ALLOW_HOST_ADMIN:-}" != true ]]; then
+    echo "ERROR: hostsh requires RDC_ALLOW_HOST_ADMIN=true." >&2
+    exit 64
+fi
+[[ $# -gt 0 ]] || set -- /bin/sh
+# Use the host's PATH and a clean environment; never leak container credentials by inheritance.
+exec nsenter --target 1 --mount --uts --ipc --net --pid --root --wd -- \
+    /usr/bin/env -i HOME=/root USER=root LOGNAME=root SHELL=/bin/sh \
+    "TERM=${TERM:-xterm}" PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    "$@"
