@@ -68,13 +68,15 @@ docker stop rdc-host-admin       # take this remote-access path offline
 docker start rdc-host-admin      # reuse existing pairing
 ```
 
-Default restart policy is `no`: a host reboot does not automatically restore this privileged access path. Persistent service operation is an explicit choice:
+Default restart policy is `no`: a Docker daemon restart or host reboot intentionally takes this root-equivalent remote-access path offline. This is the recommended security posture. Bring it back only through an explicit local/approved administrative action:
 
 ```bash
-docker update --restart unless-stopped rdc-host-admin
+docker start rdc-host-admin
 ```
 
-Or set `RDC_RESTART_POLICY=unless-stopped` at install. Stopping RDC does not revoke an independent service/session another administrator may have created on the host. Do not reboot production services merely to test this container.
+The persistent state volume retains the paired device identity, so an intentional restart can reuse the existing pairing. Do not change the container to an automatic restart policy merely for convenience or monitoring availability; doing so turns a break-glass administrative path into a persistent remote-management service. If an environment has an explicitly approved requirement for persistent host-admin access, review that as a separate security decision before setting `RDC_RESTART_POLICY=unless-stopped`.
+
+Stopping RDC does not revoke an independent service/session another administrator may have created on the host. Do not reboot production services merely to test this container.
 
 ## 6. Accounts and credentials
 
