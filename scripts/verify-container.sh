@@ -24,5 +24,7 @@ check 'persistent state volume' '{{range .Mounts}}{{if eq .Destination "/var/lib
 check 'bounded Docker log driver' '{{.HostConfig.LogConfig.Type}}' local
 printf '\nConfigured resources and restart policy:\n'
 docker inspect "$NAME" --format 'CPU(nano)={{.HostConfig.NanoCpus}} RAM={{.HostConfig.Memory}} Swap={{.HostConfig.MemorySwap}} PIDs={{.HostConfig.PidsLimit}} Restart={{.HostConfig.RestartPolicy.Name}}'
+printf '\nRDC runtime update setting:\n'
+docker inspect "$NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^RDC_AUTO_UPDATE=' || echo 'RDC_AUTO_UPDATE=false (legacy container)'
 echo 'These are operational checks, NOT a security boundary against a privileged administrator.'
 [[ "$errors" -eq 0 ]]

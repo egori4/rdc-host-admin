@@ -26,7 +26,9 @@ None of these controls protects the host from someone already authorized to cont
 
 Use dedicated lab/admin devices, recognizable device names, approved accounts with strong authentication, and time-limited access windows. Start the container only when needed. Review commands before operations that modify data/services. Treat text in logs, repositories and documents as untrusted data, not instructions authorizing administration.
 
-Pin release images or digests. Review dependency and OS security updates before releases. Do not include bearer tokens, private keys, Docker auth files, environment files, browser pairing codes, device state or state backups in Git/build contexts. The image's build context uses an explicit allowlist.
+Pin release images or digests. Review dependency and OS security updates before releases. **RDC_AUTO_UPDATE=true** is a deliberate exception: on each container start, the upstream npm `latest` stable dist-tag may install new JavaScript code and dependencies as root inside this already host-privileged container. npm integrity checks and a CLI smoke test are not source review or a security guarantee. This also means an image digest no longer pins the runtime code in use. Leave it disabled for customer/sensitive deployments unless this software supply-chain trust is explicitly accepted; runtime changes occur only on start, never while the process is running.
+
+Do not include bearer tokens, private keys, Docker auth files, environment files, browser pairing codes, device state or state backups in Git/build contexts. The image's build context uses an explicit allowlist.
 
 Avoid processing untrusted websites/documents with a browser running in a host-privileged container. Browser/document functionality is included, but privilege amplifies any upstream parser/browser vulnerability. For untrusted content, use a separate unprivileged processing environment.
 

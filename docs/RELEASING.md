@@ -1,10 +1,10 @@
 # Releasing
 
-Default image: `egori4/rdc-host-admin:0.1.0`. Release images are public and `linux/amd64` only in this initial release. Source repositories never contain device state or credentials.
+Default image: `egori4/rdc-host-admin:0.2.0`. Release images are public and `linux/amd64` only in this release. Source repositories never contain device state or credentials.
 
 ## Checks before release
 
-Run the CI checks, review the security implications, and test the image on an authorized Linux lab host. Update `VERSION`, package metadata/lockfile, default image examples, and the changelog together. The upstream RDC version is pinned; upgrades are explicit reviewable changes, not automatic `latest` resolution.
+Run the CI checks, review the security implications, and test the image on an authorized Linux lab host. Update `VERSION`, package metadata/lockfile, default image examples, and the changelog together. The image still pins the bundled fallback RDC version. With opt-in `RDC_AUTO_UPDATE=true`, the container independently resolves npm's stable `latest` version at startup; this does not rebuild the image or change its tag/revision. Review this trust boundary separately from the versioned Docker image and test both the disabled and enabled paths.
 
 For host-admin, `scripts/smoke-test.sh` performs real privileged operations restricted to uniquely named temporary resources. Do not run it on a production host without permission. Browser pairing/end-to-end remote authorization is a separate manual test.
 

@@ -19,6 +19,9 @@ CPUS=$(awk -v n="$CPUS" 'BEGIN {printf "%.9f", n/1000000000}')
 MEMORY=$(docker inspect "$NAME" --format '{{.HostConfig.Memory}}')
 PIDS=$(docker inspect "$NAME" --format '{{.HostConfig.PidsLimit}}')
 RESTART=$(docker inspect "$NAME" --format '{{.HostConfig.RestartPolicy.Name}}')
+OLD_AUTO=$(docker inspect "$NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^RDC_AUTO_UPDATE=//p' | tail -n 1)
+AUTO=${RDC_AUTO_UPDATE:-${OLD_AUTO:-false}}
+[[ "$AUTO" == true || "$AUTO" == false ]] || fail "RDC_AUTO_UPDATE must be true or false."
 RUNNING=$(docker inspect "$NAME" --format '{{.State.Running}}')
 BACKUP="${NAME}-rollback-$(date -u +%Y%m%dT%H%M%SZ)"
 if docker container inspect "$BACKUP" >/dev/null 2>&1; then fail "Rollback container already exists: $BACKUP"; fi
@@ -42,7 +45,10 @@ rollback() {
     exit "$status"
 }
 trap rollback ERR INT TERM
-RDC_ALLOW_HOST_ADMIN=true RDC_HOST_ADMIN_IMAGE="$IMAGE" CONTAINER_NAME="$NAME"     STATE_VOLUME="$STATE" RDC_DEVICE_NAME="$DEVICE" RDC_CPUS="$CPUS" RDC_MEMORY="$MEMORY"     RDC_PIDS_LIMIT="$PIDS" RDC_RESTART_POLICY="$RESTART" START_NOW=n "$ROOT/install.sh"
+RDC_ALLOW_HOST_ADMIN=true RDC_HOST_ADMIN_IMAGE="$IMAGE" CONTAINER_NAME="$NAME" \
+    STATE_VOLUME="$STATE" RDC_DEVICE_NAME="$DEVICE" RDC_CPUS="$CPUS" RDC_MEMORY="$MEMORY" \
+    RDC_PIDS_LIMIT="$PIDS" RDC_RESTART_POLICY="$RESTART" RDC_AUTO_UPDATE="$AUTO" \
+    START_NOW=n "$ROOT/install.sh"
 if [[ "$RUNNING" == true ]]; then
     docker start "$NAME" >/dev/null
     sleep 3
@@ -51,4 +57,5 @@ fi
 trap - ERR INT TERM
 printf 'Updated %s. Stopped rollback container retained: %s\n' "$NAME" "$BACKUP"
 echo 'Do not start both containers: they share one device identity and state volume.'
+printf "RDC_AUTO_UPDATE=%s\n" "$AUTO"
 echo 'Local process startup was checked; verify the remote connection separately.'

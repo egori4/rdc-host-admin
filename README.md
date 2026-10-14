@@ -1,6 +1,6 @@
 # RDC Host Admin
 
-A self-contained **Desktop Commander Remote** container for root-equivalent administration of a **native Linux Docker host**. Node.js, the pinned RDC runtime, Python, shell/network utilities, Docker CLI/plugins, and Chromium are included in the image. The host needs Docker Engine and Bash, not Node/npm.
+A self-contained **Desktop Commander Remote** container for root-equivalent administration of a **native Linux Docker host**. Node.js, a pinned fallback RDC runtime, Python, shell/network utilities, Docker CLI/plugins, and Chromium are included in the image. The host needs Docker Engine and Bash, not Node/npm.
 
 > **This is intentionally privileged, not sandboxed.** Anyone who controls the paired RDC session can read host files and secrets, change the operating system, control Docker, and disrupt services. Install only on a host you are authorized to administer.
 
@@ -32,7 +32,23 @@ Open the verification URL shown by RDC. Pairing, configuration, and `/workspace`
 
 **The complete operator guide is [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).** It covers offline installation, multiple accounts, updates, rollback, access revocation and uninstall.
 
-Default image: `egori4/rdc-host-admin:0.1.0`. Use an exact release or image digest, not `latest`, for controlled deployments.
+Default image: `egori4/rdc-host-admin:0.2.0`. Use an exact release or image digest, not Docker's `latest`, for controlled deployments.
+
+### Optional Desktop Commander updates without rebuilding Docker
+
+Version 0.2.0 adds **opt-in updates on container startup**. The bundled `0.2.52` runtime is retained as an offline fallback. With `RDC_AUTO_UPDATE=true`, startup checks npm's stable `latest` dist-tag, installs a newer release into the existing persistent state volume, validates its CLI, and runs it. Failed downloads or validation use the last working cached runtime (or the bundled one). It does **not** update continuously while running, change other host containers, or override the Docker restart policy.
+
+For a new install, set `RDC_AUTO_UPDATE=true` on `./install.sh`. For an existing v0.1.0 container, **from an independent host SSH session**:
+
+```bash
+cd /opt/radware/storage/scripts/rdc-host-admin
+git pull --ff-only origin main
+docker pull egori4/rdc-host-admin:0.2.0
+RDC_ALLOW_HOST_ADMIN=true RDC_AUTO_UPDATE=true ./update.sh egori4/rdc-host-admin:0.2.0
+docker logs --tail 30 rdc-host-admin
+```
+
+The update keeps the paired identity and previous container as a stopped rollback backup. It disconnects the remote RDC session briefly. See [deployment instructions](docs/DEPLOYMENT.md#7-upgrade) for checking runtime versions, disabling automatic updates and rolling back. Automatic execution of new upstream npm releases as host root is a security tradeoff: keep it disabled on sensitive systems unless authorized.
 
 ## Working with the host
 
@@ -51,7 +67,7 @@ The container has a separate display hostname; `hostsh hostname` reports the rea
 
 ## Scope and defaults
 
-Native Linux/rootful Docker only. Docker Desktop, rootless engines, daemon user-namespace remapping, remote Docker contexts, Windows, macOS, and Kubernetes are not supported by this installer. Version 0.1.0 is built/tested for `linux/amd64` only.
+Native Linux/rootful Docker only. Docker Desktop, rootless engines, daemon user-namespace remapping, remote Docker contexts, Windows, macOS, and Kubernetes are not supported by this installer. Version 0.2.0 is built/tested for `linux/amd64` only.
 
 No Docker network is created and no inbound port is published. Runtime uses host network, PID and IPC namespaces; UTS stays private to permit the independent RDC device name. Host `/` and the Docker socket are mounted read-write. `hostsh` can enter the host UTS and mount namespaces when needed.
 
@@ -63,9 +79,9 @@ The full image includes real Chromium rather than the restricted client's browse
 
 ```bash
 python3 -m unittest discover -s tests -v
-docker build -t egori4/rdc-host-admin:0.1.0 .
+docker build -t egori4/rdc-host-admin:0.2.0 .
 # Explicitly privileged integration test on your own disposable/lab Linux host:
-RDC_ALLOW_HOST_ADMIN=true ./scripts/smoke-test.sh egori4/rdc-host-admin:0.1.0
+RDC_ALLOW_HOST_ADMIN=true ./scripts/smoke-test.sh egori4/rdc-host-admin:0.2.0
 ```
 
-See [validation results](docs/VALIDATION.md), [security](docs/SECURITY.md), [release process](docs/RELEASING.md), and [changelog](CHANGELOG.md). Image builds use digest-pinned base images and an npm lockfile with Desktop Commander 0.2.52. OS packages are resolved from Debian repositories at build time; this is not a bit-for-bit reproducible OS build.
+See [validation results](docs/VALIDATION.md), [security](docs/SECURITY.md), [release process](docs/RELEASING.md), and [changelog](CHANGELOG.md). Image builds use digest-pinned base images and an npm lockfile with Desktop Commander 0.2.52 as the bundled fallback. OS packages are resolved from Debian repositories at build time; this is not a bit-for-bit reproducible OS build.

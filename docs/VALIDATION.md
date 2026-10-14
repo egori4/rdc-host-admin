@@ -32,3 +32,16 @@ For a one-time lab reboot test only, a temporary systemd unit started `rdc-full`
 Not tested in this release validation: browser pairing of a new remote identity, end-to-end cloud-relayed ChatGPT connectivity for that new identity, real host reboot, ARM64, Docker Desktop, or a customer production deployment. No existing device credential was copied into this new project. Remote pairing remains an operator action.
 
 Reproduce the unprivileged tests with `python3 -m unittest discover -s tests -v`. On an explicitly authorized lab host, run `RDC_ALLOW_HOST_ADMIN=true ./scripts/smoke-test.sh <image>` and `RDC_ALLOW_HOST_ADMIN=true ./scripts/lifecycle-test.sh <image>`.
+
+## v0.2.0 opt-in runtime updater (2026-10-14)
+
+Validation performed on **m920q only**:
+
+- 35 unprivileged unit tests passed (initial installer/hostsh tests, opt-in runtime versioning and fallback, mocked `update.sh` preservation/override).
+- Built the `linux/amd64` image successfully with the new entrypoint command and the pinned 0.2.52 fallback.
+- Started the **runtime launcher only** inside an isolated disposable Docker container, with no host root mount, Docker socket, pairing volume, or privileged mode. It fetched and activated real upstream npm package 0.3.0.
+- Repeated with Docker `--network none` using the same disposable test volume: 0.3.0 was reused from cache and CLI help exited successfully.
+- Repeated with `RDC_AUTO_UPDATE=false`: the image's 0.2.52 fallback was used instead.
+- Removed the disposable test container(s) and test volume.
+
+Not part of this v0.2.0 validation: upgrading/restarting a deployed HA lab instance, end-to-end pairing/cloud relay after upgrade, or a customer environment. The online npm package and its dependencies are a separate supply-chain trust decision; checking CLI help is not remote-service authorization validation.
