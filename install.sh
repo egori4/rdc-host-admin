@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=scripts/common.sh
 source "$ROOT/scripts/common.sh"
-IMAGE=${RDC_HOST_ADMIN_IMAGE:-egori4/rdc-host-admin:0.1.0}
+IMAGE=${RDC_HOST_ADMIN_IMAGE:-egori4/rdc-host-admin:0.2.0}
 NAME=${CONTAINER_NAME:-rdc-host-admin}
 STATE=${STATE_VOLUME:-rdc-host-admin-state}
 DEVICE=${RDC_DEVICE_NAME:-}
@@ -11,11 +11,13 @@ CPUS=${RDC_CPUS:-1.0}
 MEMORY=${RDC_MEMORY:-1024m}
 PIDS=${RDC_PIDS_LIMIT:-512}
 RESTART=${RDC_RESTART_POLICY:-no}
+AUTO=${RDC_AUTO_UPDATE:-false}
 require_ack
 require_docker
 validate_name CONTAINER_NAME "$NAME"
 validate_name STATE_VOLUME "$STATE"
 [[ "$RESTART" == no || "$RESTART" == unless-stopped ]] || fail "RDC_RESTART_POLICY must be no or unless-stopped."
+[[ "$AUTO" == true || "$AUTO" == false ]] || fail "RDC_AUTO_UPDATE must be true or false."
 if [[ -z "$DEVICE" ]]; then
     default="host-admin-$(hostname -s)"
     if [[ -t 0 ]]; then read -r -p "RDC device name [$default]: " DEVICE; fi
@@ -43,10 +45,10 @@ docker create \
     --mount type=bind,src=/,dst=/host,bind-propagation=rslave \
     --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
     --mount "type=volume,src=$STATE,dst=/var/lib/rdc-host-admin" \
-    --env RDC_ALLOW_HOST_ADMIN=true \
+    --env RDC_ALLOW_HOST_ADMIN=true --env RDC_AUTO_UPDATE="$AUTO" \
     "$IMAGE" >/dev/null
 printf 'Created STOPPED host-admin container: %s\nRDC device name: %s\nState volume: %s\n' "$NAME" "$DEVICE" "$STATE"
-printf 'Pair: docker start -ai %s\nOffline: docker stop %s\nVerify: ./scripts/verify-container.sh %s\n' "$NAME" "$NAME" "$NAME"
+printf 'Pair: docker start -ai %s\nOffline: docker stop %s\nVerify: ./scripts/verify-container.sh %s\nAuto-update RDC runtime: %s\n' "$NAME" "$NAME" "$NAME" "$AUTO"
 if [[ "${START_NOW:-n}" == y ]]; then
     docker start "$NAME" >/dev/null
     echo "Started. View browser pairing URL with: docker logs -f $NAME"

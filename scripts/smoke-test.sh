@@ -6,7 +6,7 @@ ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$ROOT/scripts/common.sh"
 [[ "${RDC_ALLOW_HOST_ADMIN:-}" == true ]] || fail 'Explicitly set RDC_ALLOW_HOST_ADMIN=true on an authorized lab host.'
 require_docker
-IMAGE=${1:-egori4/rdc-host-admin:0.1.0}
+IMAGE=${1:-egori4/rdc-host-admin:0.2.0}
 require_image "$IMAGE"
 NAME="rdc-host-admin-smoke-$$"
 STATE="${NAME}-state"

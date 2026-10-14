@@ -5,3 +5,4 @@
 !docker-entrypoint.sh
 !scripts/
 !scripts/hostsh
+!scripts/rdc-runtime.sh

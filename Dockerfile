@@ -28,7 +28,8 @@ RUN npm ci --omit=dev \
  && npm cache clean --force
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY scripts/hostsh /usr/local/bin/hostsh
-RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh /usr/local/bin/hostsh  \
+COPY scripts/rdc-runtime.sh /usr/local/bin/rdc-runtime.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh /usr/local/bin/hostsh /usr/local/bin/rdc-runtime.sh  \
  && mkdir -p /var/lib/rdc-host-admin/device /var/lib/rdc-host-admin/config /var/lib/rdc-host-admin/workspace  \
  && chmod 0700 /var/lib/rdc-host-admin /var/lib/rdc-host-admin/device /var/lib/rdc-host-admin/config  \
  && ln -s /var/lib/rdc-host-admin/device /root/.desktop-commander-device  \
@@ -38,9 +39,9 @@ USER 0:0
 WORKDIR /workspace
 # Host PID mode means tini is not PID 1: explicitly enable subreaper mode.
 ENTRYPOINT ["/usr/bin/tini", "-s", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["desktop-commander", "remote"]
+CMD ["/usr/local/bin/rdc-runtime.sh", "remote"]
 
-ARG VERSION=0.1.0
+ARG VERSION=0.2.0
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.version="$VERSION" \
       org.opencontainers.image.revision="$VCS_REF"
