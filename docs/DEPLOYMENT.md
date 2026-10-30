@@ -24,7 +24,7 @@ Noninteractive example:
 RDC_ALLOW_HOST_ADMIN=true RDC_DEVICE_NAME=lab01-host-admin START_NOW=n ./install.sh
 ```
 
-The default container remains stopped. `START_NOW=y` explicitly starts it detached. The acknowledgement is an accident-prevention measure, not protection against someone who already controls Docker.
+The default container remains stopped. `START_NOW=y` explicitly starts it detached. RDC runtime auto-update is enabled by default; set `RDC_AUTO_UPDATE=false` when invoking `install.sh` to opt out. The acknowledgement is an accident-prevention measure, not protection against someone who already controls Docker.
 
 Only these host Docker objects are created by a fresh install:
 
@@ -96,17 +96,17 @@ Never reuse or copy the restricted CyberController client's pairing state into t
 
 ### A. Update Desktop Commander without changing the image (v0.2.0+)
 
-**Off by default.** For a new deployment, include `RDC_AUTO_UPDATE=true` when invoking `install.sh`. To migrate an existing **0.1.0** host-admin container to the 0.2.0 image and enable it, perform the following **on the host via SSH or another independent administrative session**, not via the RDC connection that will be restarted:
+**Enabled by default for new deployments.** No extra flag is required. To opt out, invoke `install.sh` with `RDC_AUTO_UPDATE=false`. To migrate an existing **0.1.0** host-admin container to the 0.2.0 image with the current default, perform the following **on the host via SSH or another independent administrative session**, not via the RDC connection that will be restarted:
 
 ```bash
 cd /opt/radware/storage/scripts/rdc-host-admin
 git pull --ff-only origin main
 docker pull egori4/rdc-host-admin:0.2.0
-RDC_ALLOW_HOST_ADMIN=true RDC_AUTO_UPDATE=true ./update.sh egori4/rdc-host-admin:0.2.0
+RDC_ALLOW_HOST_ADMIN=true ./update.sh egori4/rdc-host-admin:0.2.0
 docker logs --tail 30 rdc-host-admin
 ```
 
-The updater preserves the `rdc-host-admin-state` volume, device hostname/pairing, other Docker settings and running/stopped state. It retains the previous container, stopped, with a timestamped rollback name. It also preserves `RDC_AUTO_UPDATE` on **later image upgrades**, unless an explicit `RDC_AUTO_UPDATE=true|false` is supplied when running `update.sh`. A legacy container lacking this setting defaults to `false`; upgrading its image alone does not silently enable network-fetched code.
+The updater preserves the `rdc-host-admin-state` volume, device hostname/pairing, other Docker settings and running/stopped state. It retains the previous container, stopped, with a timestamped rollback name. It also preserves an explicit `RDC_AUTO_UPDATE` value on **later image upgrades**, unless an explicit `RDC_AUTO_UPDATE=true|false` is supplied when running `update.sh`. A legacy container lacking this setting now inherits the default `true`; pass `RDC_AUTO_UPDATE=false` during the update if you want the migrated container to stay pinned to the bundled runtime.
 
 On each **explicit start/restart**, if enabled, the startup script checks `@wonderwhy-er/desktop-commander` via the npm `latest` dist-tag (12-second query limit; only numeric stable versions). For a newer version, it downloads packages into a temporary directory in the persistent state volume (180-second limit), verifies installed metadata and that `desktop-commander remote --help` works (15-second limit), then atomically selects it. The image-bundled fallback is 0.2.52; an already validated cached release is preferred when newer than the fallback. Registry outages, invalid version responses, bad downloads or failed validation do not block startup. No polling, surprise restart or periodic background update occurs while running.
 
@@ -128,7 +128,7 @@ The selected-version file does not exist when no cached runtime was activated. C
 RDC_ALLOW_HOST_ADMIN=true RDC_AUTO_UPDATE=false ./update.sh egori4/rdc-host-admin:0.2.0
 ```
 
-Run this from a separate host session. Disabling immediately selects the image's bundled version at the next start, ignoring cached runtime versions; it does not delete them. Re-enabling can reuse an existing cached runtime. A CLI `--help` smoke check is not an end-to-end Remote session guarantee; if a new runtime has issues, use this opt-out and investigate. Avoid enabling unattended upstream code updates on hosts where root-equivalent changes require approval.
+Run this from a separate host session. Disabling immediately selects the image's bundled version at the next start, ignoring cached runtime versions; it does not delete them. Re-enabling can reuse an existing cached runtime. A CLI `--help` smoke check is not an end-to-end Remote session guarantee; if a new runtime has issues, use this opt-out and investigate. Opt out on hosts where root-equivalent upstream code updates require per-version approval.
 
 ### B. Upgrade the Docker image itself (OS/tools/packaging)
 
