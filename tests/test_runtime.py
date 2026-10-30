@@ -1,4 +1,4 @@
-"""Tests for the opt-in RDC runtime updater; no Docker or network access."""
+"""Tests for the default-enabled RDC runtime updater; no Docker or network access."""
 import json
 import os
 from pathlib import Path
@@ -61,7 +61,6 @@ class RuntimeUpdateTests(unittest.TestCase):
         self.env = {
             **os.environ,
             "PATH": str(self.tools) + os.pathsep + os.environ["PATH"],
-            "RDC_AUTO_UPDATE": "true",
             "RDC_STATE_DIR": str(self.state),
             "RDC_BUNDLED_DIR": str(self.bundled),
             "TEST_NPM_LOG": str(self.tmp / "npm.jsonl"),
