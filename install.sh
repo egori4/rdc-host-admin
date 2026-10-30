@@ -11,7 +11,7 @@ CPUS=${RDC_CPUS:-1.0}
 MEMORY=${RDC_MEMORY:-1024m}
 PIDS=${RDC_PIDS_LIMIT:-512}
 RESTART=${RDC_RESTART_POLICY:-no}
-AUTO=${RDC_AUTO_UPDATE:-false}
+AUTO=${RDC_AUTO_UPDATE:-true}
 require_ack
 require_docker
 validate_name CONTAINER_NAME "$NAME"
