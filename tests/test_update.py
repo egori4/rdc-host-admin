@@ -113,9 +113,9 @@ class UpdatePreservationTests(unittest.TestCase):
         create=next(c for c in calls if c[0]=='create')
         return create, json.loads(self.state.read_text())
 
-    def test_legacy_container_remains_disabled(self):
+    def test_legacy_container_inherits_enabled_default(self):
         create,state=self.update(None)
-        self.assertIn('RDC_AUTO_UPDATE=false',create)
+        self.assertIn('RDC_AUTO_UPDATE=true',create)
         self.assertIn('rdc-host-admin-test',state['containers'])
         self.assertTrue(state['containers']['rdc-host-admin-test']['running'])
         self.assertEqual(len(state['containers']),2)
@@ -123,6 +123,10 @@ class UpdatePreservationTests(unittest.TestCase):
     def test_enabled_setting_survives_image_upgrade(self):
         create,_=self.update('true')
         self.assertIn('RDC_AUTO_UPDATE=true',create)
+
+    def test_disabled_setting_survives_image_upgrade(self):
+        create,_=self.update('false')
+        self.assertIn('RDC_AUTO_UPDATE=false',create)
 
     def test_explicit_setting_overrides_old(self):
         create,_=self.update('true',RDC_AUTO_UPDATE='false')
