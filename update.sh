@@ -20,7 +20,7 @@ MEMORY=$(docker inspect "$NAME" --format '{{.HostConfig.Memory}}')
 PIDS=$(docker inspect "$NAME" --format '{{.HostConfig.PidsLimit}}')
 RESTART=$(docker inspect "$NAME" --format '{{.HostConfig.RestartPolicy.Name}}')
 OLD_AUTO=$(docker inspect "$NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^RDC_AUTO_UPDATE=//p' | tail -n 1)
-AUTO=${RDC_AUTO_UPDATE:-${OLD_AUTO:-false}}
+AUTO=${RDC_AUTO_UPDATE:-${OLD_AUTO:-true}}
 [[ "$AUTO" == true || "$AUTO" == false ]] || fail "RDC_AUTO_UPDATE must be true or false."
 RUNNING=$(docker inspect "$NAME" --format '{{.State.Running}}')
 BACKUP="${NAME}-rollback-$(date -u +%Y%m%dT%H%M%SZ)"
