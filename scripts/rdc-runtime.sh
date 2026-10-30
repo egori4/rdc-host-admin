@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Opt-in Desktop Commander runtime updates. The container image remains immutable.
+# Desktop Commander runtime updates are enabled by default. Set RDC_AUTO_UPDATE=false to opt out.
 set -euo pipefail
 
 PACKAGE='@wonderwhy-er/desktop-commander'
@@ -32,7 +32,7 @@ runtime_valid() {
 bundled_version=$(package_version "$BUNDLED_META")
 stable_version "$bundled_version" || { log "Invalid bundled version"; exit 1; }
 
-case "${RDC_AUTO_UPDATE:-false}" in
+case "${RDC_AUTO_UPDATE:-true}" in
     false)
         log "using bundled $bundled_version (automatic updates disabled)"
         exec "$BUNDLED_BIN" "$@"
