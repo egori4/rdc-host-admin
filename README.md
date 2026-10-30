@@ -34,21 +34,21 @@ Open the verification URL shown by RDC. Pairing, configuration, and `/workspace`
 
 Default image: `egori4/rdc-host-admin:0.2.0`. Use an exact release or image digest, not Docker's `latest`, for controlled deployments.
 
-### Optional Desktop Commander updates without rebuilding Docker
+### Automatic Desktop Commander updates without rebuilding Docker
 
-Version 0.2.0 adds **opt-in updates on container startup**. The bundled `0.2.52` runtime is retained as an offline fallback. With `RDC_AUTO_UPDATE=true`, startup checks npm's stable `latest` dist-tag, installs a newer release into the existing persistent state volume, validates its CLI, and runs it. Failed downloads or validation use the last working cached runtime (or the bundled one). It does **not** update continuously while running, change other host containers, or override the Docker restart policy.
+Version 0.2.0 adds **automatic updates on container startup, enabled by default for new installs**. The bundled `0.2.52` runtime is retained as an offline fallback. Unless `RDC_AUTO_UPDATE=false` is set, startup checks npm's stable `latest` dist-tag, installs a newer release into the existing persistent state volume, validates its CLI, and runs it. Failed downloads or validation use the last working cached runtime (or the bundled one). It does **not** update continuously while running, change other host containers, or override the Docker restart policy.
 
-For a new install, set `RDC_AUTO_UPDATE=true` on `./install.sh`. For an existing v0.1.0 container, **from an independent host SSH session**:
+New installs enable runtime auto-update automatically. To opt out, run `RDC_AUTO_UPDATE=false ./install.sh`. For an existing v0.1.0 container, **from an independent host SSH session**:
 
 ```bash
 cd /opt/radware/storage/scripts/rdc-host-admin
 git pull --ff-only origin main
 docker pull egori4/rdc-host-admin:0.2.0
-RDC_ALLOW_HOST_ADMIN=true RDC_AUTO_UPDATE=true ./update.sh egori4/rdc-host-admin:0.2.0
+RDC_ALLOW_HOST_ADMIN=true ./update.sh egori4/rdc-host-admin:0.2.0
 docker logs --tail 30 rdc-host-admin
 ```
 
-The update keeps the paired identity and previous container as a stopped rollback backup. It disconnects the remote RDC session briefly. See [deployment instructions](docs/DEPLOYMENT.md#7-upgrade) for checking runtime versions, disabling automatic updates and rolling back. Automatic execution of new upstream npm releases as host root is a security tradeoff: keep it disabled on sensitive systems unless authorized.
+The update keeps the paired identity and previous container as a stopped rollback backup. It disconnects the remote RDC session briefly. See [deployment instructions](docs/DEPLOYMENT.md#7-upgrade) for checking runtime versions, disabling automatic updates and rolling back. Automatic execution of new upstream npm releases as host root is a security tradeoff. On customer or sensitive systems where upstream runtime updates require explicit approval, opt out with `RDC_AUTO_UPDATE=false`.
 
 ## Working with the host
 
