@@ -88,11 +88,17 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(any(c[0] == 'start' for c in self.calls()))
         self.assertNotIn('--publish', args)
 
-    def test_auto_update_opt_in_is_passed_to_docker(self):
-        p = self.run_script(RDC_AUTO_UPDATE='true')
+    def test_auto_update_defaults_enabled(self):
+        p = self.run_script()
         self.assertEqual(p.returncode, 0, p.stderr)
         args = next(c for c in self.calls() if c[0] == 'create')
         self.assertIn('RDC_AUTO_UPDATE=true', args)
+
+    def test_auto_update_can_be_disabled(self):
+        p = self.run_script(RDC_AUTO_UPDATE='false')
+        self.assertEqual(p.returncode, 0, p.stderr)
+        args = next(c for c in self.calls() if c[0] == 'create')
+        self.assertIn('RDC_AUTO_UPDATE=false', args)
 
     def test_auto_update_invalid_value_is_rejected_before_create(self):
         self.assert_no_create(self.run_script(RDC_AUTO_UPDATE='maybe'))
