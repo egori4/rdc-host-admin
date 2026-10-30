@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- RDC runtime auto-update is now enabled by default for new installs and for legacy image upgrades that do not already have an explicit setting.
+- Set `RDC_AUTO_UPDATE=false` to opt out and use the image-bundled runtime; explicit existing `true`/`false` choices remain preserved across later image upgrades.
+- Updated operator/security documentation and tests for the new default and opt-out behavior.
+
 ## 0.2.0
 
 - Opt-in startup check of the upstream npm stable `latest` dist-tag (`RDC_AUTO_UPDATE=true`), with versioned persistent runtime cache and atomic selection after CLI validation.
